@@ -14,33 +14,35 @@ void monitor::new_user(int client_id,int sock,sockaddr_storage * user_addr)
     char str[INET_ADDRSTRLEN];
     getnameinfo((sockaddr *)user_addr,sizeof(user_addr),str,sizeof(str),NULL,0,0);
     printf("hostname is %s\n",str);
-    Client *new_user = new Client(client_id,sock,user_addr);
-    std :: pair<int,Client*> p(client_id,(new_user));
+    Client new_user(client_id,sock,user_addr);
+    std :: pair<int,Client> p(client_id,new_user);
     _Table_client.insert(p);
 }
 
-void monitor::delivery_cmd(std :: string cmd,int fd)
+int monitor::delivery_cmd(std :: string cmd,int fd)
 {
-    std :: map<int,Client *>::iterator it;
+    std :: map<int,Client >::iterator it;
     for(it = _Table_client.begin(); it != _Table_client.end(); it++)
     {
-        if(fd == it->second->_client_sock)
+        if(fd == it->second._client_sock)
         {
-                it->second->buff.append(cmd);
+                it->second.buff.append(cmd);
                 cmd.clear();
+                return(it->second._client_id);
         }
     }
+    return(-1);
 }
 
-std :: string monitor::traite_cmd(int fd)
+std :: string monitor::traite_cmd(int id_client)
 {
     size_t pos = 0;
-    std :: string buff = _Table_client.at(fd)->buff;
+    std :: string  & buff = _Table_client.at(id_client).buff;
     if(buff.data() == NULL)
     {
         return(buff);
     }
-    pos =  buff.find("\r\n");
+    pos =  buff.find("\n");
     if(pos == std :: string ::npos)
     {
         return(buff);
@@ -50,23 +52,19 @@ std :: string monitor::traite_cmd(int fd)
         std :: cout << "it's empty cmd" << std :: endl;
         return(buff);
     }
+    
     std :: string cmd;
-    std :: string first;
-
     cmd = buff.substr(0,pos+1);
-    _Table_client.at(fd)->parse_command(cmd);
+    _Table_client.at(id_client).parse_command(cmd);
     buff.erase(0,pos+1);
     return(cmd);
 }
 
-void monitor::execute_cmd(int fd)
+void monitor::execute_cmd(int id_client)
 {
-    std :: string cmd = traite_cmd(fd);
-    std :: vector<std :: string>::iterator it = _Table_client.at(fd)->_cmd.begin();
-    for(;it != _Table_client.at(fd)->_cmd.end();it++)
-    {
-        std :: cout <<"["<< it->data() <<"]"<< std :: endl;
-    }
+
+    std :: string cmd = traite_cmd(id_client);
+    std :: vector<std :: string>::iterator it = _Table_client.at(id_client)._cmd.begin();
     // if(cmd == "PASS")
     // {
         
@@ -78,13 +76,12 @@ void monitor::execute_cmd(int fd)
 void monitor::remove_user(int fd)
 {
     
-    std :: map<int,Client *> :: iterator it = _Table_client.begin();
+    std :: map<int,Client> :: iterator it = _Table_client.begin();
     for(;it != _Table_client.end();it++)
     {
-        if(fd == it->second->_client_sock)
+        if(fd == it->second._client_sock)
         {
-            it->second->buff.clear();
-           delete it->second;
+            it->second.buff.clear();
         }
     }
 }

@@ -16,29 +16,29 @@ Client :: Client()
 
 }
 
-Client :: Client(int id_client,int sockt,struct sockaddr_storage *clientaddr) : _client_id(id_client),_client_address(clientaddr),_client_sock(sockt)
+Client :: Client(int id_client,int sockt,struct sockaddr_storage *clientaddr) 
 {
-    char buff[512];
-    socklen_t s = sizeof(buff);
-    std :: cout << "creat client with socket"<<sockt<< std :: endl;
-    inet_ntop(_client_address->ss_family,get_know_add(_client_address),buff,s);
-    std :: cout << "adress client :"<<buff<< std :: endl;
+
+    this->_client_id = id_client;
+    this->_client_sock = sockt;
+    this->_client_address = clientaddr;
+    // char buff[512];
+    // socklen_t s = sizeof(buff);
+    // std :: cout << "creat client with socket"<<sockt<< std :: endl;
+    // inet_ntop(_client_address->ss_family,get_know_add(_client_address),buff,s);
+    // std :: cout << "adress client :"<<buff<< std :: endl;
 }
 
 void Client :: parse_command(std :: string buff)
 {
-    std :: string str = buff;
-    size_t pos = str.find(' ');
-    std :: string tmp;
-    while(pos != std :: string ::npos)
+    std :: string  & str = buff;
+    char *tmp = std :: strtok((char *)str.data()," \r\n");
+    while(tmp != NULL)
     {
-        tmp =  std :: strtok((char *)str.data()," ");
-        _cmd.push_back(tmp);
-        str = str.erase(0,pos + 1);
-        pos = str.find(' ');
+        if(tmp)
+            _cmd.push_back(tmp);
+        tmp =  std :: strtok(NULL," \r\n");
     }
-    tmp =  std :: strtok((char *)str.data(),"\r\n");
-    _cmd.push_back(tmp);
 }
 
 Client :: ~Client()

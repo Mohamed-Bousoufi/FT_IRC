@@ -151,9 +151,10 @@ void Server ::determine_connection(std :: vector<struct pollfd> &fds, int size)
 				}
 				else
 				{
-					
-					man.delivery_cmd(buff,fds[i].fd);
-					man.execute_cmd(fds[i].fd);
+					int id_client;
+					id_client = man.delivery_cmd(buff,fds[i].fd);
+					if(id_client != -1)
+						man.execute_cmd(id_client);
 					
 				}
 			}
