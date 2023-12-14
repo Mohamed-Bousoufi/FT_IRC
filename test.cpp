@@ -1,9 +1,13 @@
-#include<iostream>
+#include <iostream>
+
 
 int main()
 {
-    char s[10] = "A   b";
+    const char *string = "hello9";
+    std :: string s;
 
-    char *res = std :: strtok((char *)s," ");
-    printf("%s\n",res);
+    s = string;
+    size_t pos = s.find("9");
+    std :: cout << pos << std :: endl;
+    std :: cout << sizeof(string) << std :: endl;
 }

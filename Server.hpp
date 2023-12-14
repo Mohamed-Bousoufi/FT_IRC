@@ -15,12 +15,13 @@ class Server
 {
     public :
             char *_Port;
-            char *_Password;
+            std :: string _Password;
             int _Serv_socket;
             struct sockaddr_storage *Server_addr;
             monitor man;
 
             Server(char * port,char * password);
+            int check_pass();
             struct addrinfo * creat_socket();
             ~Server();
             int release_server();
