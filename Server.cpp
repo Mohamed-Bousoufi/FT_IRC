@@ -119,7 +119,7 @@ void Server ::determine_connection(std :: vector<struct pollfd> &fds, int size)
 	std::memset(&tempaddr, '\0', sizeof(tempaddr));
 	for (int i = 0; i < size; i++)
 	{		
-		if (fds[i].revents == POLL_IN)
+		if (fds[i].revents & POLL_IN)
 		{
 			if (fds[i].fd == this->_Serv_socket)
 			{
@@ -132,11 +132,12 @@ void Server ::determine_connection(std :: vector<struct pollfd> &fds, int size)
 			}
 			else
 			{
-				char buff[512];
+				char buff[1024];
 				memset(buff,'\0',sizeof(buff));
 				recbytes = recv(fds[i].fd,buff, sizeof(buff),0);
 				if (recbytes <= 0)
 				{
+					perror("recv : ");
 					close(fds[i].fd);
 					man.remove_user(fds[i].fd);
 					fds[i] = fds[size - 1];
@@ -155,6 +156,7 @@ void Server ::determine_connection(std :: vector<struct pollfd> &fds, int size)
 		}
 	}
 }
+
 
 int Server :: check_pass()
 {

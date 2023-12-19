@@ -12,6 +12,8 @@ class Client
         std :: string _client_name;
         std :: string _hostname;
         std :: string _nick_name;
+        std :: string _user_name;
+        std :: string _real_name;
         int _client_id;
         struct sockaddr_storage *_client_address;
         int _client_sock;
@@ -20,6 +22,7 @@ class Client
         bool _had_nick_name;
         bool _had_user_name;
         bool _had_registred;
+        bool _msg_appear;
         std::vector<std :: string> _cmd;
         void parse_command(std :: string buff);
         Client(int id_client,int sock,struct sockaddr_storage *);

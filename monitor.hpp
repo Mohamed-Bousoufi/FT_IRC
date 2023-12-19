@@ -22,4 +22,8 @@ class monitor
         void check_nickname(std :: string cmd,int id_client);
         int nick_in_use(std :: string nickname);
         int valid_nickname(std :: string nickname);
+        int username_check(std :: vector<std :: string> & cmd,int id_client);
+        void check_regiseter(int id_client);
+        void send_msg_usr(std :: string msg,std :: string error,int client_id);
+        void join_command(std :: vector<std :: string> cmd);
 };

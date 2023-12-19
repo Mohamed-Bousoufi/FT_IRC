@@ -71,16 +71,29 @@ void monitor::execute_cmd(int id_client)
         if(cmd[0].compare("PASS") == 0 || cmd[0].compare("pass") == 0)
         {
             check_password(cmd[1],id_client);
+            check_regiseter(id_client);
         }
         else if(cmd[0].compare("NICK") == 0 || cmd[0].compare("nick") == 0)
         {
             if(cmd.size() >= 3)
             {
-                std :: cout << "ft_irc 432 "<<ERR_ERRONEUSNICKNAME<< std :: endl;
+                send_msg_usr("ft_irc 4321 ",ERR_ERRONEUSNICKNAME,id_client);
                 _Table_client.at(id_client)._cmd.clear();
                 return;
             }
             check_nickname(cmd[1],id_client);
+            check_regiseter(id_client);
+            _Table_client.at(id_client)._cmd.clear();
+        }
+        else if(cmd[0].compare("USER") == 0 || cmd[0].compare("user") == 0)
+        {
+            username_check(cmd,id_client);
+            check_regiseter(id_client);
+            _Table_client.at(id_client)._cmd.clear();
+        }
+        else if(cmd[0].compare("JOIN") == 0 || cmd[0].compare("join"))
+        {
+            
         }
         else
         {
@@ -114,23 +127,22 @@ void monitor :: check_password(std :: string cmd,int id_client)
 {
     if(cmd.empty())
     {
-        std :: cout << "ft_irc 461 "<< ERR_NEEDMOREPARAMS << std :: endl;
+         send_msg_usr("ft_irc 461 ",ERR_NEEDMOREPARAMS,id_client); 
         _Table_client.at(id_client)._cmd.clear();
     }
     else if(_Table_client.at(id_client)._had_registred == true)
     {
-        std :: cout << "ft_irc 462 " << ERR_ALREADYREGISTERED << std :: endl;
+        send_msg_usr("ft_irc 462 ",ERR_ALREADYREGISTERED,id_client);
         _Table_client.at(id_client)._cmd.clear();
     }
     else if(password.compare(cmd))
     {
-        std :: cout << "ft_irc 464 "<< ERR_PASSWDMISMATCH << std :: endl;
+        send_msg_usr("ft_irc 464 ",ERR_PASSWDMISMATCH,id_client);
         _Table_client.at(id_client)._had_password = false;
         _Table_client.at(id_client)._cmd.clear();
     }
     else
     {
-        std :: cout << "PASSWORD CORRECT" << std :: endl;
         _Table_client.at(id_client)._had_password = true;
         _Table_client.at(id_client)._cmd.clear();
     }
@@ -170,28 +182,89 @@ int monitor::valid_nickname(std :: string nickname)
 
 void monitor::check_nickname(std :: string nickname,int id_client)
 {
-    std :: cout << nickname << std :: endl;
     if(nickname.empty())
     {
-        std :: cout << "ft_irc 431 "<< ERR_NONICKNAMEGIVEN << std :: endl;
+       send_msg_usr("ft_irc 431 ", ERR_NONICKNAMEGIVEN,id_client);
         _Table_client.at(id_client)._cmd.clear();
     }
     else if(nick_in_use(nickname))
     {
-        std :: cout << "ft_irc 433 "<< ERR_NICKNAMEINUSE<< std :: endl;
+       send_msg_usr("ft_irc 433 ", ERR_NICKNAMEINUSE,id_client);
         _Table_client.at(id_client)._cmd.clear();
     }
     else if(valid_nickname(nickname))
     {
-        std :: cout << "ft_irc 432 "<<ERR_ERRONEUSNICKNAME<< std :: endl;
+       send_msg_usr("ft_irc 432 ",ERR_ERRONEUSNICKNAME,id_client);
         _Table_client.at(id_client)._cmd.clear();
     }
     else
     {
         _Table_client.at(id_client)._nick_name = nickname;
         _Table_client.at(id_client)._had_nick_name = true;
-        std :: cout << nickname << "@"<<_Table_client.at(id_client)._hostname<< std :: endl;
-        _Table_client.at(id_client)._cmd.clear();
     }
 }
 
+int monitor ::username_check(std :: vector<std :: string>  & cmd,int id_client)
+{
+    if(_Table_client.at(id_client)._had_user_name)
+    {
+        send_msg_usr("ft_irc 462 ",ERR_ALREADYREGISTERED,id_client);
+        return(1);
+    }
+    if(cmd.size() < 5)
+    {
+        send_msg_usr("ft_irc 461",ERR_NEEDMOREPARAMS,id_client);
+        return(1);
+    }
+    else if(cmd[1].size() > 10)
+    {
+        send_msg_usr("Syntax","The user name must contain no more than 10 characters.",id_client);
+        return(1);
+    }
+    else if(cmd[2].compare("0") || cmd[3].compare("*"))
+    {
+        send_msg_usr(" Syntax"," : user name and real name must be separated by 0 *",id_client);
+        return(1);
+    }
+    else if(cmd[4].find(":") != 0)
+    {
+        send_msg_usr ("Syntax"," : real name should be prefixed with colon(:)",id_client);
+        return(1);
+    }
+    else
+    {
+        _Table_client.at(id_client)._user_name = cmd[1];
+        cmd[4] = cmd[4].substr(1,cmd[4].size());
+        for(size_t i = 4;i < cmd.size();i++)
+        {
+            _Table_client.at(id_client)._real_name.append(cmd[i]);
+        }
+        _Table_client.at(id_client)._had_user_name = true;
+
+    }
+    return(0);
+}
+
+void monitor::check_regiseter(int id_client)
+{
+    std :: string user_hosts;
+
+    user_hosts.append(_Table_client.at(id_client)._nick_name);
+    user_hosts.append("[!");
+    user_hosts.append(_Table_client.at(id_client)._user_name);
+    user_hosts.append("@");
+    user_hosts.append(_Table_client.at(id_client)._hostname);
+    user_hosts.append("]");
+    if(_Table_client.at(id_client)._had_password && _Table_client.at(id_client)._had_nick_name && \
+     _Table_client.at(id_client)._had_user_name && _Table_client.at(id_client)._msg_appear == false)
+    {
+        send_msg_usr("Welcome to the Internet Relay Network, ",user_hosts,id_client);
+    }
+}
+
+void monitor::send_msg_usr(std :: string str,std :: string error,int id_client)
+{
+    int fd = _Table_client.at(id_client)._client_sock;
+    std :: string msg = str.append(error);
+    send(fd,msg.c_str(),msg.size(),0);
+}
